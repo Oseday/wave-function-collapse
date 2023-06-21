@@ -1,0 +1,23 @@
+{
+	"name": "Mad City",
+	"tree": {
+		"$className": "DataModel",
+
+		"ServerScriptService": {
+			"$className": "ServerScriptService",
+
+			"Rojo": {
+				"$path": "src/ServerScriptService/Rojo"
+			}
+		},
+		
+		"ReplicatedStorage": {
+			"$className": "ReplicatedStorage",
+
+			"Rojo": {
+				"$path": "src/ReplicatedStorage/Rojo"
+			}
+		}
+		
+	}
+}
