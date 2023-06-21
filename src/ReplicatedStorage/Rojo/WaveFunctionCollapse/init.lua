@@ -9,12 +9,12 @@ local DebugFolder = Instance.new("Folder", workspace)
 
 local DebugColors = {} :: {[string]: Color3}
 
-local function _PlaceDebugPart(position: Vector3int16, voxelName: string)
+local function _PlaceDebugPart(cframe: CFrame, voxelName: string)
 	local part = Instance.new("Part")
 	part.Anchored = true
 	part.CanCollide = false
 	part.Size = Vector3.new(1, 1, 1)
-	part.Position = Vector3.new(position.X, position.Y, position.Z)
+	part.CFrame = cframe
 	part.Color = DebugColors[voxelName] or Color3.new(1, 1, 1)
 	part.Parent = DebugFolder
 end
@@ -22,6 +22,7 @@ end
 
 export type Options = {
 	SizeMagnitude: number,
+	CornersIncluded: boolean,
 }
 
 export type VoxelName = string
@@ -33,16 +34,16 @@ export type Voxel = {
 
 export type Index = number
 
-local function Vector3ToIndex(vector: Vector3int16) : Index
+local function Vector3ToIndex(vector: Vector3) : Index
 	return math.round(vector.X + vector.Y * 1000 + vector.Z * 1000000)
 end
 
-local function IndexToVector3(index: number) : Vector3int16
+local function IndexToVector3(index: number) : Vector3
 	local x = index % 1000
 	local y = math.floor(index / 1000) % 1000
 	local z = math.floor(index / 1000000)
 
-	return Vector3int16.new(x, y, z)
+	return Vector3.new(x, y, z)
 end
 
 export type Grid = {
@@ -84,13 +85,14 @@ function WaveFunctionCollapse.new(options: Options) : typeof(class)
 	local self = setmetatable({}, class)
 
 	self.SizeMagnitude = options.SizeMagnitude or 1
+	self.CornersIncluded = if options.CornersIncluded~=nil then options.CornersIncluded else true
 
 	self.VoxelList = {}
 
 	return self
 end
 
-function class:Generate(size: Vector3int16, starterGrid: Grid) : Grid
+function class:Generate(size: Vector3, starterGrid: Grid) : Grid
 
 	DebugFolder:ClearAllChildren()
 
@@ -108,7 +110,9 @@ function class:Generate(size: Vector3int16, starterGrid: Grid) : Grid
 
 	local voxelList: VoxelList = self.VoxelList
 
-	local function UpdateVoxelInformation(position: Vector3int16)
+	--print(voxelList)
+
+	local function UpdateVoxelInformation(position: Vector3)
 
 		if position.X > size.X then
 			return
@@ -146,7 +150,13 @@ function class:Generate(size: Vector3int16, starterGrid: Grid) : Grid
 						continue
 					end
 
-					local offset = Vector3int16.new(tx, ty, tz)
+					if not self.CornersIncluded then
+						if math.abs(tx) == self.SizeMagnitude and math.abs(ty) == self.SizeMagnitude and math.abs(tz) == self.SizeMagnitude then
+							continue
+						end
+					end
+
+					local offset = Vector3.new(tx, ty, tz)
 
 					local neighborPosition = position + offset
 					
@@ -160,7 +170,9 @@ function class:Generate(size: Vector3int16, starterGrid: Grid) : Grid
 					local neighborName = neighbor.Name
 					local neighborOrientation = neighbor.Orientation
 
-					local possibilities = voxelList[neighborName].Possibilites[Vector3ToIndex(-offset)]
+					local realoffset = neighborOrientation * offset
+
+					local possibilities = voxelList[neighborName].Possibilites[Vector3ToIndex(-realoffset)]
 
 					
 					for k, possibility in pairs(allPossibilities) do
@@ -185,10 +197,10 @@ function class:Generate(size: Vector3int16, starterGrid: Grid) : Grid
 		end
 
 		if not next(allPossibilities) then
-			--gridOfPossibilities[index] = {
-			--	Voxels = allPossibilities,
-			--	Weight = 0,
-			--}
+			gridOfPossibilities[index] = {
+				Voxels = allPossibilities,
+				Weight = 0,
+			}
 			return
 			--error("No possibilities for voxel at " .. tostring(position))
 		end
@@ -205,6 +217,9 @@ function class:Generate(size: Vector3int16, starterGrid: Grid) : Grid
 		}
 	end
 	
+	local maxDepth = 10
+	local depth = 0
+
 	local function CollapseHighestPossibilityVoxel()
 		local highestWeight = 0
 		local highestWeightPosition = nil
@@ -217,7 +232,18 @@ function class:Generate(size: Vector3int16, starterGrid: Grid) : Grid
 		end
 
 		if not gridOfPossibilities[highestWeightPosition] then
-			return false
+
+			depth = depth + 1
+			if maxDepth < depth then
+				return false
+			end
+
+			-- Recalculate possibilities in gridOfPossibilities
+			for position, voxel in pairs(gridOfPossibilities) do
+				UpdateVoxelInformation(IndexToVector3(position))
+			end
+
+			return true
 		end
 
 		local possibilities = gridOfPossibilities[highestWeightPosition].Voxels
@@ -239,7 +265,9 @@ function class:Generate(size: Vector3int16, starterGrid: Grid) : Grid
 				grid[highestWeightPosition] = possibility
 				gridOfPossibilities[highestWeightPosition] = nil
 
-				_PlaceDebugPart(IndexToVector3(highestWeightPosition), possibility.Name)
+				local pos = IndexToVector3(highestWeightPosition)
+
+				_PlaceDebugPart(possibility.Orientation + Vector3.new(pos.X, pos.Y, pos.Z), possibility.Name)
 
 				--if math.random() < 0.1 then
 				--	task.wait()
@@ -252,8 +280,14 @@ function class:Generate(size: Vector3int16, starterGrid: Grid) : Grid
 							if x==0 and y==0 and z==0 then
 								continue
 							end
+							
+							if not self.CornersIncluded then
+								if math.abs(x) == self.SizeMagnitude and math.abs(y) == self.SizeMagnitude and math.abs(z) == self.SizeMagnitude then
+									continue
+								end
+							end
 
-							local position = IndexToVector3(highestWeightPosition) + Vector3int16.new(x, y, z)
+							local position = IndexToVector3(highestWeightPosition) + Vector3.new(x, y, z)
 
 							UpdateVoxelInformation(position)
 						end
@@ -269,7 +303,7 @@ function class:Generate(size: Vector3int16, starterGrid: Grid) : Grid
 
 	local starterPosition, startVoxel = next(starterGrid)
 
-	_PlaceDebugPart(starterPosition, startVoxel.Name)
+	_PlaceDebugPart(startVoxel.Orientation + Vector3.new(starterPosition.X, starterPosition.Y, starterPosition.Z), startVoxel.Name)
 
 	if not starterPosition then
 		error("Need at least one voxel inside the starterGrid")
@@ -281,8 +315,14 @@ function class:Generate(size: Vector3int16, starterGrid: Grid) : Grid
 				if x==0 and y==0 and z==0 then
 					continue
 				end
+							
+				if not self.CornersIncluded then
+					if math.abs(x) == self.SizeMagnitude and math.abs(y) == self.SizeMagnitude and math.abs(z) == self.SizeMagnitude then
+						continue
+					end
+				end
 
-				local offset = Vector3int16.new(x, y, z)
+				local offset = Vector3.new(x, y, z)
 				UpdateVoxelInformation(starterPosition + offset)
 			end
 		end
@@ -320,8 +360,14 @@ function class:AddVoxel(voxelName: VoxelName, debugColor: Color3?)
 				if x==0 and y==0 and z==0 then
 					continue
 				end
+							
+				if not self.CornersIncluded then
+					if math.abs(x) == self.SizeMagnitude and math.abs(y) == self.SizeMagnitude and math.abs(z) == self.SizeMagnitude then
+						continue
+					end
+				end
 
-				local offset = Vector3int16.new(x, y, z)
+				local offset = Vector3.new(x, y, z)
 				local offsetIndex = Vector3ToIndex(offset)
 				self.VoxelList[voxelName].Possibilites[offsetIndex] = {}
 			end
@@ -333,7 +379,7 @@ function class:AddEmptyVoxel()
 	self:AddVoxel("Empty")
 end
 
-function class:ExtractPatternFromGridPosition(grid: Grid, position: Vector3int16)
+function class:ExtractPatternFromGridPosition(grid: Grid, position: Vector3)
 	local index = Vector3ToIndex(position)
 	local voxel = grid[index]
 
@@ -360,8 +406,14 @@ function class:ExtractPatternFromGridPosition(grid: Grid, position: Vector3int16
 				if x==0 and y==0 and z==0 then
 					continue
 				end
+				
+				if not self.CornersIncluded then
+					if math.abs(x) == self.SizeMagnitude and math.abs(y) == self.SizeMagnitude and math.abs(z) == self.SizeMagnitude then
+						continue 
+					end
+				end
 
-				local offset = Vector3int16.new(x, y, z)
+				local offset = Vector3.new(x, y, z)
 				local offsetIndex = Vector3ToIndex(offset)
 
 				local neighborPosition = position + offset
@@ -379,10 +431,15 @@ function class:ExtractPatternFromGridPosition(grid: Grid, position: Vector3int16
 
 				local possibilities = voxelList[voxelName].Possibilites[offsetIndex]
 
+				local weightadd = 1
+				--if voxelName == neighborName and RotationsEqual(voxelOrientation, neighborOrientation) then
+				--	weightadd = 1
+				--end
+
 				local found = false
 				for k, possibility in pairs(possibilities) do
 					if possibility.Name == neighborName and RotationsEqual(possibility.Orientation, neighborOrientation) then
-						possibility.Weight = possibility.Weight + 1
+						possibility.Weight = possibility.Weight + weightadd
 						found = true
 						break
 					end
@@ -394,7 +451,7 @@ function class:ExtractPatternFromGridPosition(grid: Grid, position: Vector3int16
 
 				table.insert(voxelList[voxelName].Possibilites[offsetIndex], {
 					Name = neighborName,
-					Weight = 1,
+					Weight = weightadd,
 					Orientation = voxelOrientation:Inverse() * neighborOrientation,
 				})
 			end
