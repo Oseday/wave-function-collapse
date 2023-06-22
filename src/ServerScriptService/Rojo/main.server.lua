@@ -5,7 +5,8 @@ local WaveFunctionCollapse = require(ReplicatedStorage.Rojo.WaveFunctionCollapse
 local function testWaveFunctionCollapse()
     -- Initialize the module
     local wfc = WaveFunctionCollapse.new({
-        SizeMagnitude = 1
+        SizeMagnitude = 1,
+		CornersIncluded = false,
     })
 
     -- Add a voxel
@@ -93,9 +94,28 @@ for _, folder in ExamplesFolder:GetChildren() do
     end
 end
 
-local wfc = WaveFunctionCollapse.new({
+local wfc
+wfc = WaveFunctionCollapse.new({
     SizeMagnitude = 1,
-    CornersIncluded = false,
+    CornersIncluded = true,
+	ConstraintFunction = function(grid, voxel, position) 
+
+		if voxel.Name == "Deep orange" then
+			if wfc.CountCollapsedVoxels["Deep orange"] >= 2 then
+				return false
+			end
+		end
+
+		--if voxel.Name == "Black" then
+		--	local nindex = WaveFunctionCollapse.Vector3ToIndex(position + voxel.Orientation * Vector3.new(0, 0, -1))
+		--	local nvoxel = grid[nindex]
+		--	if not nvoxel or nvoxel.Name ~= "Shamrock" then
+		--		return false
+		--	end
+		--end
+
+		return true
+	end
 })
 
 for _, voxel in ipairs(voxels) do
@@ -124,12 +144,28 @@ for name, exampleTable in pairs(ExampleTables) do
 end
 
 local starterGrid = {
-    [Vector3.new(1, 1, 1)] = {Orientation = CFrame.new(), Name = "Forest green"},
+    [Vector3.new(10, 1, 10)] = {Orientation = CFrame.new(), Name = "Forest green"},
 }
+
+local generatedGrid = wfc:Generate(Vector3.new(64, 1, 64), starterGrid)
+
+print(wfc.VoxelList)
+
+local i = 0
 
 while true do
 
+	i = i + 1
+
     local generatedGrid = wfc:Generate(Vector3.new(64, 1, 64), starterGrid)
     
-    task.wait(1.5)
+	for _, voxel in pairs(generatedGrid) do
+		if voxel.Name == "CGA brown" then
+			task.wait(3)
+		end
+	end
+
+	if i % 10 == 0 then
+    	task.wait()
+	end
 end
