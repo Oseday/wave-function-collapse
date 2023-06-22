@@ -52,7 +52,7 @@ export type Grid = {
 
 export type GridOfPossibilities = {
 	[Index]: {
-		Voxels: Voxel,
+		Voxels: {Voxel},
 		Weight: number,
 	},
 }
@@ -81,7 +81,7 @@ local function RotationsEqual(a: CFrame, b: CFrame) : boolean
 	return GetRotationFromTo(a, b).Magnitude < 0.01
 end
 
-function WaveFunctionCollapse.new(options: Options) : typeof(class)
+function WaveFunctionCollapse.new(options: Options)
 	local self = setmetatable({}, class)
 
 	self.SizeMagnitude = options.SizeMagnitude or 1
