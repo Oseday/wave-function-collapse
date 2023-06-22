@@ -39,13 +39,13 @@ export type Voxel = {
 export type Index = number
 
 local function Vector3ToIndex(vector: Vector3) : Index
-	return math.round(vector.X + vector.Y * 1000 + vector.Z * 1000000)
+	return math.round(vector.Z + vector.X * 1000 + vector.Y * 1000000)
 end
 
 local function IndexToVector3(index: number) : Vector3
-	local x = index % 1000
-	local y = math.floor(index / 1000) % 1000
-	local z = math.floor(index / 1000000)
+	local z = index % 1000
+	local x = math.floor(index / 1000) % 1000
+	local y = math.floor(index / 1000000)
 
 	return Vector3.new(x, y, z)
 end
@@ -199,13 +199,15 @@ function class:Generate(size: Vector3, starterGrid: Grid) : Grid
 
 					local possibilities = voxelList[neighborName].Possibilites[Vector3ToIndex(-realOffset)]
 
+					local weightadd =  - (math.abs(tx) + math.abs(ty) + math.abs(tz)) / (3)
+					
 					
 					for k, possibility in pairs(allPossibilities) do
 						local weight = nil
 
 						for k2, neighborPossibility in pairs(possibilities) do
 							if possibility.Name == neighborPossibility.Name and OrientationsEqual(possibility.Orientation, neighborOrientation * neighborPossibility.Orientation) then
-								weight = (weight or 0) + neighborPossibility.Weight
+								weight = (weight or 0) + neighborPossibility.Weight + weightadd
 								break
 							end
 						end
@@ -287,7 +289,7 @@ function class:Generate(size: Vector3, starterGrid: Grid) : Grid
 			totalWeight = totalWeight + possibility.Weight
 		end
 
-		local randomWeight = math.random(0, totalWeight)
+		local randomWeight = (math.random(0, totalWeight) / totalWeight) ^ 2 * totalWeight
 
 		local currentWeight = 0
 
@@ -448,7 +450,7 @@ function class:ExtractPatternFromGridPosition(grid: Grid, position: Vector3)
 				local offset = Vector3.new(x, y, z)
 				local offsetIndex = Vector3ToIndex(offset)
 
-				local neighborPosition = position + offset
+				local neighborPosition = position + voxelOrientation * offset
 				local neighborPositionIndex = Vector3ToIndex(neighborPosition)
 
 				local neighbor = grid[neighborPositionIndex]
@@ -484,7 +486,7 @@ function class:ExtractPatternFromGridPosition(grid: Grid, position: Vector3)
 				table.insert(voxelList[voxelName].Possibilites[offsetIndex], {
 					Name = neighborName,
 					Weight = weightadd,
-					Orientation = voxelOrientation:Inverse() * neighborOrientation,
+					Orientation = neighborOrientation,
 				})
 			end
 		end

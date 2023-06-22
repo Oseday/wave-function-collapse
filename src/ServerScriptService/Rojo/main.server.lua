@@ -101,9 +101,25 @@ wfc = WaveFunctionCollapse.new({
 	ConstraintFunction = function(grid, voxel, position) 
 
 		if voxel.Name == "Deep orange" then
-			if wfc.CountCollapsedVoxels["Deep orange"] >= 2 then
+			if wfc.CountCollapsedVoxels["Deep orange"] >= 3 then
 				return false
 			end
+		end
+
+		--Check the 6 sides and make sure at least one of them is a voxel
+		local hasNeighbor = false
+
+		for _, direction in ipairs({Vector3.new(0, 0, 1), Vector3.new(0, 0, -1), Vector3.new(1, 0, 0), Vector3.new(-1, 0, 0), Vector3.new(0, 1, 0), Vector3.new(0, -1, 0)}) do
+			local nindex = WaveFunctionCollapse.Vector3ToIndex(position + direction)
+			local nvoxel = grid[nindex]
+			if nvoxel then
+				hasNeighbor = true
+				break
+			end
+		end
+
+		if not hasNeighbor then
+			return false
 		end
 
 		--if voxel.Name == "Black" then
@@ -161,9 +177,11 @@ while true do
     
 	for _, voxel in pairs(generatedGrid) do
 		if voxel.Name == "CGA brown" then
-			task.wait(3)
+			--task.wait(3)
 		end
 	end
+
+	task.wait(.1)
 
 	if i % 10 == 0 then
     	task.wait()
