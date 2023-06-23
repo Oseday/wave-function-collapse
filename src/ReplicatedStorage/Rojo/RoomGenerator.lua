@@ -89,7 +89,7 @@ function class:AddExample(grid: WaveFunctionCollapse.Grid)
 	self.WFC:GiveExampleGrid(grid)
 end 
 
-local DEBUG_MODE = true
+local DEBUG_MODE = false
 
 function class:Generate(starterRoomName: string, originCFrame: CFrame) : Folder
 	assert(typeof(starterRoomName) == "string", "Invalid starter room name " .. tostring(starterRoomName))

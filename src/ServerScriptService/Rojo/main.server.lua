@@ -236,7 +236,7 @@ rg = RoomGenerator.new(function(grid, voxel, position)
 	end
 
 	if voxel.Name == "End" then
-		if rg.WFC.CountCollapsedVoxels["End"] >= 2 then
+		if rg.WFC.CountCollapsedVoxels["End"] >= 1 then
 			return false
 		end
 	end
@@ -244,11 +244,21 @@ rg = RoomGenerator.new(function(grid, voxel, position)
 	return true
 end, function(grid)
 	local totalCount = 0
+
+	local totalEndCount = 0
+
 	for _, voxel in pairs(grid) do
 		totalCount = totalCount + 1
+		if voxel.Name == "End" then
+			totalEndCount = totalEndCount + 1
+		end
 	end
 
-	if totalCount < 5 then
+	if totalEndCount ~= 1 then
+		return false
+	end
+
+	if totalCount < 8 then
 		return false
 	end
 
@@ -285,7 +295,7 @@ while true do
 
 	folder.Parent = workspace
 	
-	task.wait(1)
+	task.wait(0.4)
 
 	folder:Destroy()
 end
