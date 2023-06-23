@@ -79,7 +79,7 @@ local function testWaveFunctionCollapse()
 end
 
 --testWaveFunctionCollapse()
-
+local function testWaveFunctionCollapse2() 
 
 local ExamplesFolder = workspace.Examples
 
@@ -186,4 +186,106 @@ while true do
 	if i % 10 == 0 then
     	task.wait()
 	end
+end
+
+end
+
+--testWaveFunctionCollapse2()
+
+local function testWaveFunctionCollapse3()
+	local RoomGenerator = require(ReplicatedStorage.Rojo.RoomGenerator)
+
+	local rg = RoomGenerator.new()
+
+	rg:AddRoom(workspace.Start)
+	rg:AddRoom(workspace.End)
+	rg:AddRoom(workspace.Middle)
+
+	rg:GenerateAllPossibilities()
+
+	rg:AddExample({
+		[Vector3.new(0, 0, 10)] = {
+			Orientation = CFrame.new(),
+			Name = "Start",
+		},
+		[Vector3.new(0, 0, 9)] = {
+			Orientation = CFrame.new(),
+			Name = "Middle",
+		},
+		[Vector3.new(0, 0, 8)] = {
+			Orientation = CFrame.new(),
+			Name = "End",
+		},
+		
+	})
+
+	local folder = rg:Generate("Start", CFrame.new(0,10,0))
+
+	folder.Parent = workspace
+end
+
+
+local RoomGenerator = require(ReplicatedStorage.Rojo.RoomGenerator)
+
+local rg
+rg = RoomGenerator.new(function(grid, voxel, position)
+	if voxel.Name == "Start" then
+		if rg.WFC.CountCollapsedVoxels["Start"] >= 1 then
+			return false
+		end
+	end
+
+	if voxel.Name == "End" then
+		if rg.WFC.CountCollapsedVoxels["End"] >= 2 then
+			return false
+		end
+	end
+
+	return true
+end, function(grid)
+	local totalCount = 0
+	for _, voxel in pairs(grid) do
+		totalCount = totalCount + 1
+	end
+
+	if totalCount < 5 then
+		return false
+	end
+
+	return true
+end)
+
+for _, room in ipairs(workspace.Rooms:GetChildren()) do
+	rg:AddRoom(room)
+end
+
+rg:GenerateAllPossibilities()
+
+local ExampleTables = {}
+
+for i, folder in workspace.LayoutExamples:GetChildren() do
+	local name = i
+	ExampleTables[name] = {}
+	for _, part:Part in folder:GetChildren() do
+		local x, y, z = part.Position.X, part.Position.Y, part.Position.Z
+		local orientation = part.CFrame - part.Position
+		ExampleTables[name][Vector3.new(x, y, z)] = {
+			Orientation = orientation,
+			Name = part.Name,
+		}
+	end
+end
+
+for name, exampleTable in pairs(ExampleTables) do
+	rg:AddExample(exampleTable)
+end
+
+while true do
+	local folder = rg:GenerateUntilNoErrors("Start", CFrame.new(0,100,0))
+
+	folder.Parent = workspace
+	
+	task.wait(1)
+
+	folder:Destroy()
 end

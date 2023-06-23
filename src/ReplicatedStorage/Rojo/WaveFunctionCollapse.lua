@@ -11,6 +11,7 @@ local DebugColors = {} :: {[string]: Color3}
 
 local function _PlaceDebugPart(cframe: CFrame, voxelName: string)
 	local part = Instance.new("Part")
+	part.Name = voxelName
 	part.Anchored = true
 	part.CanCollide = false
 	part.Size = Vector3.new(1, 1, 1)
@@ -23,10 +24,12 @@ local function IsCorner(x,y,z,SizeMagnitude)
 	return math.abs(x) + math.abs(y) + math.abs(z) >= (SizeMagnitude + 1)
 end
 
+export type ConstraintFunction = ((grid: Grid, voxel: Voxel, position: Vector3) -> boolean)
+
 export type Options = {
 	SizeMagnitude: number,
 	CornersIncluded: boolean,
-	ConstraintFunction: ((grid: Grid, voxel: Voxel, position: Vector3) -> boolean)?, -- Return true if the voxel is allowed to be placed at this position
+	ConstraintFunction: ConstraintFunction?, -- Return true if the voxel is allowed to be placed at this position
 }
 
 export type VoxelName = string
@@ -536,6 +539,17 @@ function class:GenerateAllPossibilities()
 	end
 
 	self.AllPossibilities = allPossibilities
+end
+
+function class:ConvertGridIndexToPosition(grid: Grid)
+	local ngrid = {}
+
+	for index, voxel in pairs(grid) do
+		local position = IndexToVector3(index)
+		ngrid[position] = voxel
+	end
+
+	return ngrid
 end
 
 return WaveFunctionCollapse
