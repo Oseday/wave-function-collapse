@@ -89,7 +89,7 @@ function class:AddExample(grid: WaveFunctionCollapse.Grid)
 	self.WFC:GiveExampleGrid(grid)
 end 
 
-local DEBUG_MODE = false
+local DEBUG_MODE = true
 
 function class:Generate(starterRoomName: string, originCFrame: CFrame) : Folder
 	assert(typeof(starterRoomName) == "string", "Invalid starter room name " .. tostring(starterRoomName))
@@ -201,7 +201,7 @@ function class:Generate(starterRoomName: string, originCFrame: CFrame) : Folder
 end
 
 function class:GenerateUntilNoErrors(starterRoomName: string, originCFrame: CFrame) : Folder
-	for i = 1, 100 do
+	for i = 1, 5 do
 		local success, result = pcall(function()
 			return self:Generate(starterRoomName, originCFrame)
 		end)
@@ -213,7 +213,7 @@ function class:GenerateUntilNoErrors(starterRoomName: string, originCFrame: CFra
 		end
 	end
 
-	error("Failed to generate room after 100 attempts")
+	error("Failed to generate room after 5 attempts")
 end
 
 

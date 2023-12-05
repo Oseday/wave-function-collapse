@@ -1,5 +1,9 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+do
+	task.wait(9e29)
+end
+
 local WaveFunctionCollapse = require(ReplicatedStorage.Rojo.WaveFunctionCollapse)
 
 local function testWaveFunctionCollapse()
