@@ -45,6 +45,12 @@ function DungeonGenerator.new(dungeonTemplateFolder: Folder)
 				return false
 			end
 		end
+
+		if voxel.Name == "RoomB" then
+			if rg.WFC.CountCollapsedVoxels["RoomB"] >= 1 then
+				return false
+			end
+		end
 	
 		return true
 	end
@@ -56,7 +62,17 @@ function DungeonGenerator.new(dungeonTemplateFolder: Folder)
 		if startCount == 0 or endCount == 0 then
 			return false
 		end
+
+		local total = 0
+
+		for _, ct in pairs(rg.WFC.CountCollapsedVoxels) do
+			total = total + ct
+		end
 	
+		if total <= 5 then
+			return false
+		end
+
 		return true
 	end
 
@@ -103,7 +119,7 @@ function class:Generate(starterRoomName: string, originCFrame: CFrame)
 
 	for _, room in ipairs(dungeonFolder:GetChildren()) do
 		local scriptRoom = room:FindFirstChild("Script")
-		if scriptRoom:IsA("ModuleScript") then
+		if scriptRoom and scriptRoom:IsA("ModuleScript") then
 			local script = require(scriptRoom)
 			self.RoomScripts[room] = script
 		end

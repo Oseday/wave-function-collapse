@@ -89,7 +89,7 @@ function class:AddExample(grid: WaveFunctionCollapse.Grid)
 	self.WFC:GiveExampleGrid(grid)
 end 
 
-local DEBUG_MODE = true
+local DEBUG_MODE = false
 
 function class:Generate(starterRoomName: string, originCFrame: CFrame) : Folder
 	assert(typeof(starterRoomName) == "string", "Invalid starter room name " .. tostring(starterRoomName))
@@ -184,7 +184,7 @@ function class:Generate(starterRoomName: string, originCFrame: CFrame) : Folder
 					nextRoomModel:PivotTo( newRoomCFrame )
 
 					if DEBUG_MODE then
-						task.wait(0.3)
+						task.wait(0.01)
 					end
 
 					visitedRoomCFrames[nextPos] = newRoomCFrame
@@ -201,7 +201,7 @@ function class:Generate(starterRoomName: string, originCFrame: CFrame) : Folder
 end
 
 function class:GenerateUntilNoErrors(starterRoomName: string, originCFrame: CFrame) : Folder
-	for i = 1, 5 do
+	for i = 1, 100 do
 		local success, result = pcall(function()
 			return self:Generate(starterRoomName, originCFrame)
 		end)
